@@ -5,11 +5,11 @@
 #}
 {% extends "layout.html" %}
 
-{% block single_row_content %}
-    <dl class="dl-horizontal">
-        <dt>Addresse</dt>
-        <dd>{{ subnet.address }}</dd>
-        <dt>Gateway</dt>
-        <dd>{{ subnet.gateway }}</dd>
-    </dl>
+{% block content %}
+    <ul class="unstyled">
+    <p>Addresse:</p>
+	<p>{{ subnet.address }}</p>
+    <p>Gateway:</p>
+	<p>{{ subnet.gateway }}</p>
+    </ul>
 {% endblock %}
