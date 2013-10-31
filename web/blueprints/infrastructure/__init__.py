@@ -13,28 +13,25 @@
 
 from flask import Blueprint, flash, redirect, render_template, url_for
 from pycroft.helpers import host
-from pycroft.model.host import Switch, Host
-from pycroft.model.dormitory import Subnet, VLAN
-from pycroft.model.dns import Record, CNAMERecord
+from pycroft.model.host import Switch
+from pycroft.model.dormitory import Subnet
+from pycroft.model.host_alias import HostAlias, CNameRecord
 from web.blueprints.navigation import BlueprintNavigation
 from web.blueprints.infrastructure.forms import SwitchPortForm
-from web.blueprints.infrastructure.forms import CNAMERecordEditForm
-from web.blueprints.infrastructure.forms import CNAMERecordCreateForm
+from web.blueprints.infrastructure.forms import CNameRecordEditForm
+from web.blueprints.infrastructure.forms import CNameRecordCreateForm
 from web.blueprints.infrastructure.forms import RecordCreateForm
-from web.blueprints.infrastructure.forms import a_records_query
-from web.blueprints.access import BlueprintAccess
+from web.blueprints.infrastructure.forms import arecords_query
 
-from pycroft.lib.dns import delete_record, change_record, create_cname_record
+from pycroft.lib.host_alias import delete_alias, change_alias, create_cnamerecord
 from pycroft.lib.infrastructure import create_switch_port
 
 bp = Blueprint('infrastructure', __name__, )
-access = BlueprintAccess(bp, ['infrastructure_show'])
-nav = BlueprintNavigation(bp, "Infrastruktur", blueprint_access=access)
+nav = BlueprintNavigation(bp, "Infrastruktur")
 
 
 @bp.route('/subnets')
 @nav.navigate(u"Subnetze")
-@access.require('infrastructure_show')
 def subnets():
     subnets_list = Subnet.q.all()
     return render_template('infrastructure/subnets_list.html',
@@ -43,92 +40,82 @@ def subnets():
 
 @bp.route('/switches')
 @nav.navigate(u"Switche")
-@access.require('infrastructure_show')
 def switches():
     switches_list = Switch.q.all()
     return render_template('infrastructure/switches_list.html',
         switches=switches_list)
 
 
-@bp.route('/user/<int:user_id>/record_delete/<int:record_id>')
-@access.require('infrastructure_change')
-def record_delete(user_id, record_id):
-    delete_record(record_id)
+@bp.route('/user/<int:user_id>/record_delete/<int:alias_id>')
+def record_delete(user_id, alias_id):
+    delete_alias(alias_id)
     flash(u"Record gelöscht", 'success')
 
     return redirect(url_for("user.user_show", user_id=user_id))
 
 
-@bp.route('/user/<int:user_id>/record_edit/<int:record_id>',
+@bp.route('/user/<int:user_id>/record_edit/<int:alias_id>',
     methods=['GET', 'POST'])
-@access.require('infrastructure_change')
-def record_edit(user_id, record_id):
-    record = Record.q.get(record_id)
+def record_edit(user_id, alias_id):
+    alias = HostAlias.q.get(alias_id)
 
-    edit_function = ".%s_edit" % (record.discriminator,)
+    edit_function = ".%s_edit" % (alias.discriminator,)
 
     return redirect(
-        url_for(edit_function, user_id=user_id, record_id=record_id))
+        url_for(edit_function, user_id=user_id, alias_id=alias_id))
 
 
-@bp.route('/user/<int:user_id>/record_edit/<int:record_id>/a')
-@access.require('infrastructure_change')
-def a_record_edit(user_id, record_id):
+@bp.route('/user/<int:user_id>/record_edit/<int:alias_id>/a')
+def arecord_edit(user_id, alias_id):
     return redirect(url_for("user.user_show", user_id=user_id))
 
 
-@bp.route('/user/<int:user_id>/record_edit/<int:record_id>/aaaa')
-@access.require('infrastructure_change')
-def aaaa_record_edit(user_id, record_id):
+@bp.route('/user/<int:user_id>/record_edit/<int:alias_id>/aaaa')
+def aaaarecord_edit(user_id, alias_id):
     return redirect(url_for("user.user_show", user_id=user_id))
 
 
-@bp.route('/user/<int:user_id>/record_edit/<int:record_id>/cname',
+@bp.route('/user/<int:user_id>/record_edit/<int:alias_id>/cname',
     methods=['GET', 'POST'])
-@access.require('infrastructure_change')
-def cname_record_edit(user_id, record_id):
-    record = CNAMERecord.q.get(record_id)
+def cnamerecord_edit(user_id, alias_id):
+    alias = CNameRecord.q.get(alias_id)
 
-    form = CNAMERecordEditForm()
-    form.record_for.data = record.record_for.name
+    form = CNameRecordEditForm()
+    form.alias_for.data = alias.alias_for.name
 
     if form.validate_on_submit():
-        change_record(record, name=form.name.data)
+        change_alias(alias, name=form.name.data)
 
         flash(u"Alias geändert", "success")
         return redirect(url_for("user.user_show", user_id=user_id))
 
     return render_template('infrastructure/record_edit.html',
         form=form, user_id=user_id,
-        page_title=u"Alias ändern für " + record.alias_for.name)
+        page_title=u"Alias ändern für " + alias.alias_for.name)
 
 
-@bp.route('/user/<int:user_id>/record_edit/<int:record_id>/mx')
-@access.require('infrastructure_change')
-def mx_record_edit(user_id, record_id):
+@bp.route('/user/<int:user_id>/record_edit/<int:alias_id>/mx')
+def mxrecord_edit(user_id, alias_id):
     return redirect(url_for("user.user_show", user_id=user_id))
 
 
-@bp.route('/user/<int:user_id>/record_edit/<int:record_id>/ns')
-@access.require('infrastructure_change')
-def ns_record_edit(user_id, record_id):
+@bp.route('/user/<int:user_id>/record_edit/<int:alias_id>/ns')
+def nsrecord_edit(user_id, alias_id):
     return redirect(url_for("user.user_show", user_id=user_id))
 
 
-@bp.route('/user/<int:user_id>/record_edit/<int:record_id>/srv')
-@access.require('infrastructure_change')
-def srv_record_edit(user_id, record_id):
+@bp.route('/user/<int:user_id>/record_edit/<int:alias_id>/srv')
+def srvrecord_edit(user_id, alias_id):
     return redirect(url_for("user.user_show", user_id=user_id))
 
 
 @bp.route('/user/<int:user_id>/record_create/<int:host_id>',
     methods=['GET', 'POST'])
-@access.require('infrastructure_change')
 def record_create(user_id, host_id):
     form = RecordCreateForm()
 
     if not form.is_submitted():
-        form.type.data = 'CNAMERecord'
+        form.type.data = 'CNameRecord'
 
     if form.validate_on_submit():
         create_function = ".%s_create" % (form.type.data,)
@@ -138,75 +125,70 @@ def record_create(user_id, host_id):
 
     return render_template('infrastructure/record_create.html',
         form=form, user_id=user_id, host_id=host_id,
-        page_title=u"DNS-Eintrag erzeugen")
+        page_title=u"Alias erzeugen")
 
 
 @bp.route('/user/<int:user_id>/record_create/<int:host_id>/a')
-@access.require('infrastructure_change')
-def a_record_create(user_id, host_id):
+def arecord_create(user_id, host_id):
     return redirect(url_for("user.user_show", user_id=user_id))
 
 
 @bp.route('/user/<int:user_id>/record_create/<int:host_id>/aaaa')
-@access.require('infrastructure_change')
-def aaaa_record_create(user_id, host_id):
+def aaaarecord_create(user_id, host_id):
     return redirect(url_for("user.user_show", user_id=user_id))
 
 
 @bp.route('/user/<int:user_id>/record_create/<int:host_id>/cname',
     methods=['GET', 'POST'])
-@access.require('infrastructure_change')
-def cname_record_create(user_id, host_id):
-    form = CNAMERecordCreateForm()
-    form.record_for.query = a_records_query(host_id)
-    host = Host.q.get(host_id)
+def cnamerecord_create(user_id, host_id):
+    form = CNameRecordCreateForm()
+    form.alias_for.query = arecords_query(host_id)
 
     if form.validate_on_submit():
-        create_cname_record(host=host, name=form.name.data,
-            record_for=form.record_for.data)
+        create_cnamerecord(host_id=host_id, name=form.name.data,
+            alias_for=form.alias_for.data)
 
-        flash(u"Neuer CNAMERecord angelegt", 'success')
+        flash(u"Neuer CNameRecord angelegt", 'success')
 
         return redirect(url_for("user.user_show", user_id=user_id))
 
     return render_template('infrastructure/recordtype_create.html', form=form,
         user_id=user_id, host_id=host_id,
-        page_title=u"Neuen CNAMERecord erzeugen")
+        page_title=u"Neuen CNameRecord erzeugen")
 
 
 @bp.route('/user/<int:user_id>/record_create/<int:host_id>/mx')
-@access.require('infrastructure_change')
-def mx_record_create(user_id, host_id):
+def mxrecord_create(user_id, host_id):
     return redirect(url_for("user.user_show", user_id=user_id))
 
 
 @bp.route('/user/<int:user_id>/record_create/<int:host_id>/ns')
-@access.require('infrastructure_change')
-def ns_record_create(user_id, host_id):
+def nsrecord_create(user_id, host_id):
     return redirect(url_for("user.user_show", user_id=user_id))
 
 
 @bp.route('/user/<int:user_id>/record_create/<int:host_id>/srv')
-@access.require('infrastructure_change')
-def srv_record_create(user_id, host_id):
+def srvrecord_create(user_id, host_id):
     return redirect(url_for("user.user_show", user_id=user_id))
 
 
-@bp.route('/switch/show/<int:switch_id>')
+@bp.route('/switch/show/<switch_id>')
 def switch_show(switch_id):
     switch = Switch.q.get(switch_id)
-    if not switch:
-        flash(u"Switch mit ID %s nicht gefunden!" % switch_id, "error")
-        return redirect(url_for('.switches'))
     switch_port_list = switch.ports
     switch_port_list = host.sort_ports(switch_port_list)
     return render_template('infrastructure/switch_show.html',
         page_title=u"Switch: " + switch.name,
         switch=switch, switch_ports=switch_port_list)
 
+@bp.route('/subnet/show/<subnet_id>')
+def subnet_show(subnet_id):
+    subnet = Subnet.q.get(subnet_id)
+    return render_template('infrastructure/subnet_show.html',
+                           page_title=u"Subnetz: " + subnet.dns_domain,
+                           subnet=subnet)
 
-@bp.route('/switch/<int:switch_id>/switch_port/create', methods=['GET', 'POST'])
-@access.require('infrastructure_change')
+@bp.route('/switch/<switch_id>/switch_port/create', methods=['GET', 'POST'])
 def switch_port_create(switch_id):
     form = SwitchPortForm()
     switch = Switch.q.get(switch_id)
@@ -220,9 +202,6 @@ def switch_port_create(switch_id):
 
 
 @bp.route('/vlans')
-@nav.navigate(u"VLANs")
-@access.require('infrastructure_show')
+@nav.navigate(u"Vlans")
 def vlans():
-    vlans_list = VLAN.q.all()
-    return render_template('infrastructure/vlan_list.html',
-                           vlans=vlans_list)
+    return render_template('infrastructure/base.html')
