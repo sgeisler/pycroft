@@ -1,0 +1,55 @@
+{#
+ Copyright (c) 2014 The Pycroft Authors. See the AUTHORS file.
+ This file is part of the Pycroft project and licensed under the terms of
+ the Apache License, Version 2.0. See the LICENSE file for details.
+#}
+{% extends "layout.html" %}
+{% import "macros/forms.html" as forms %}
+{% import "macros/logs.html" as logs %}
+
+{% block content %}
+    <ul class="breadcrumb">
+        <li><a href="{{ url_for('.overview') }}">Wohnheime</a></li>
+        <li><a href="{{ url_for('.dormitory_levels', dormitory_id=room.dormitory.id) }}">{{ room.dormitory.short_name }}</a></li>
+        <li><a href="{{ url_for('.dormitory_level_rooms', dormitory_id=room.dormitory_id, level=room.level) }}">Etage {{ room.level|level_number }}</a></li>
+        <li class="active">Zimmer {{ room.number }}</li>
+    </ul>
+    <h2>Überblick</h2>
+    <div class="row">
+        <div class="col-sm-6 col-md-5 col-lg-4">
+            <dl class="dl-horizontal">
+                <dt>Wohnheim</dt>
+                <dd>{{ room.dormitory.street }} {{ room.dormitory.number }}</dd>
+                <dt>Nummer</dt>
+                <dd>{{ room.number }}</dd>
+                <dt>Etage</dt>
+                <dd>{{ room.level }}</dd>
+                <dt>Bewohnbar</dt>
+                <dd>{{ room.inhabitable }}</dd>
+            </dl>
+        </div>
+        {% if room.inhabitable -%}
+        <div class="col-sm-6 col-md-5 col-lg-4">
+            {% if not room.users -%}
+            <p>In diesem Zimmer wohnt niemand, oder derjenige bekommt von uns kein Netz.</p>
+            {%- else %}
+            <h3>Bewohner</h3>
+            <ul>
+                {% for user in room.users -%}
+                <li><a href="{{ url_for('user.user_show', user_id=user.id) }}">{{ user.name }}</a> </li>
+                {%- endfor %}
+            </ul>
+            {%- endif %}
+        </div>
+        {%- endif %}
+    </div>
+
+    <h2>Log</h2>
+    <div class="row">
+        {{ logs.render_log(room_log) }}
+    </div>
+
+    <div class="row">
+        {{ forms.simple_form(form, '') }}
+    </div>
+{% endblock %}

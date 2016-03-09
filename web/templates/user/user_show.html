@@ -1,0 +1,136 @@
+{#
+ Copyright (c) 2014 The Pycroft Authors. See the AUTHORS file.
+ This file is part of the Pycroft project and licensed under the terms of
+ the Apache License, Version 2.0. See the LICENSE file for details.
+#}
+{% extends "layout.html" %}
+{% set page_title = "Nutzer anzeigen" %}
+{% import "macros/forms.html" as forms %}
+
+{% block page_css %}
+<style type="text/css">
+#trafficgraph-day-selector {
+    float: left;
+    overflow: hidden;
+}
+#select-days {
+    margin: -5px -20px -23px -5px;
+    padding: 10px;
+}
+
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+    <div class="subnav">
+        <ul class="nav nav-pills">
+            <li><a href="#master-data">Stammdaten</a></li>
+            <li><a href="#devices">Geräte</a></li>
+            <li><a href="#traffic">Traffic</a></li>
+            <li><a href="#logs">Logs</a></li>
+            {% if current_user is privileged_for('finance_show') %}
+                <li><a href="#finance">Konto</a></li>
+            {% endif %}
+            <li><a href="#groups">Gruppen</a></li>
+            {% if current_user is privileged_for('infrastructure_show') %}
+                <li><a href="#hosts">Hosts</a></li>
+            {% endif %}
+        </ul>
+    </div>
+
+    {# Stammdaten #}
+    <section id="master-data">
+        <div class="page-header"><h2>Stammdaten</h2></div>
+        <div class="body">
+            {% include "user/_user_show_basedata.html" with context %}
+        </div>
+    </section>
+
+    {# Nutzergeräte #}
+    <section id="devices">
+        <div class="page-header"><h2>Geräte</h2></div>
+        <div>
+            {% include "user/_user_show_devices.html" with context %}
+        </div>
+    </section>
+
+    {# Traffic #}
+    <section id="traffic">
+        <div class="page-header"><h2>Traffic</h2></div>
+        <div class="body">
+            {% include "user/_user_show_traffic.html" with context %}
+        </div>
+    </section>
+
+    {# Logs zum Nutzers #}
+    <section id="logs">
+        <div class="page-header"><h2>Logs</h2></div>
+        <div class="body">
+            {% include "user/_user_show_logs.html" with context %}
+        </div>
+    </section>
+
+    {# Konto des Nutzers #}
+    {% if current_user is privileged_for('finance_show') %}
+        <section id="finance">
+            <div class="page-header"><h2>Konto</h2></div>
+            <div class="body">
+                {% include "user/_user_show_finance.html" with context %}
+            </div>
+        </section>
+    {% endif %}
+
+    {# Gruppen des Nutzers #}
+    <section id="groups">
+        <div class="page-header"><h2>Gruppen</h2></div>
+        <div class="body">
+            {% include "user/_user_show_groups.html" with context %}
+        </div>
+    </section>
+
+    {# Hosts-Tabelle #}
+    {% if current_user is privileged_for('infrastructure_show') %}
+        <section id="hosts">
+            <div class="page-header"><h2>Hosts</h2></div>
+            <div class="body">
+                {% include "user/_user_show_hosts.html" with context %}
+            </div>
+        </section>
+    {% endif %}
+{% endblock %}
+
+
+{% block page_script %}
+    <script type="text/javascript" src="{{ url_for("static", filename="highcharts/highcharts.js") }}"></script>
+    <script type="text/javascript" src="{{ url_for("static", filename="custom/js/trafficgraph.js") }}"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            load_trafficchart(7);
+        });
+    </script>
+    <script type="text/javascript" src="{{ url_for("static", filename="custom/js/navigation.js") }}"></script>
+    <script type="text/javascript">
+        $(".subnav").subNavBar();
+    </script>
+    <script type="text/javascript">
+        /*
+        Message AJAX POST
+         */
+        $("#message-form").live("submit", function(e) {
+            e.preventDefault();
+            $.post("", $("#message-form").serialize(), function() {
+                $("#message-overview").load("{{ url_for('.user_show', user_id=user.id) }} #message-overview > *", function() {
+                    $("textarea#message").val('');
+                });
+            });
+        })
+    </script>
+    <script type="text/javascript">
+        $("#select-days").change(function() {
+            var days = $("#select-days option:selected").val();
+            load_trafficchart(days);
+        });
+    </script>
+{% endblock %}

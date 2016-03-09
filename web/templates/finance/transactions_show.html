@@ -1,0 +1,39 @@
+{#
+ Copyright (c) 2014 The Pycroft Authors. See the AUTHORS file.
+ This file is part of the Pycroft project and licensed under the terms of
+ the Apache License, Version 2.0. See the LICENSE file for details.
+#}
+{% extends "layout.html" %}
+{% set page_title = "Buchung anzeigen" %}
+{% set inverted = false %}
+
+{% block content %}
+    <section>
+        <dl class="dl-horizontal">
+            <dt>Beschreibung</dt>
+            <dd>{{ transaction.description }}</dd>
+            <dt>Erstellt am</dt>
+            <dd>{{ transaction.transaction_date|datetime }}</dd>
+            <dt>Gültig ab</dt>
+            <dd>{{ transaction.valid_date|date }}</dd>
+        </dl>
+    </section>
+    <section>
+        <table class="table table-hover table-striped">
+            <thead>
+                <tr>
+                    <th>Konto</th>
+                    <th>Wert</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for split in transaction.splits -%}
+                <tr class="{{ "success" if (split.amount > 0 and not inverted) or (split.amount <= 0 and inverted) else "danger" }}">
+                    <td><a href="{{ url_for(".accounts_show", account_id=split.account_id) }}">{{ split.account.name }}</a></td>
+                    <td>{{ split.amount|money }}</td>
+                </tr>
+                {%- endfor %}
+            </tbody>
+        </table>
+    </section>
+{% endblock %}

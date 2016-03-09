@@ -1,0 +1,186 @@
+{#
+ Copyright (c) 2014 The Pycroft Authors. See the AUTHORS file.
+ This file is part of the Pycroft project and licensed under the terms of
+ the Apache License, Version 2.0. See the LICENSE file for details.
+#}
+{%- import "macros/navigation.html" as navigation with context -%}
+{%- import "macros/resources.html" as resources with context -%}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    {{ resources.link_css("bootstrap/css/bootstrap.min.css") }}
+    {{ resources.link_css("typeahead/typeahead.css") }}
+    {{ resources.link_css("style.css") }}
+    {% block page_css %}{% endblock %}
+    <link rel="shortcut icon" href="{{ url_for("static", filename="images/favicon.ico") }}"/>
+    <title>Userman – {{ navigation.get_blueprint_title(config) }} {{ navigation.get_page_title(config, page_title) -}}</title>
+</head>
+
+<body>
+    {% block navbar -%}
+        <nav class="navbar navbar-default navbar-fixed-top navbar-inverse" role="navigation">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse">
+                        <span class="sr-only">Navigation umschalten</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/">Userman</a>
+                </div>
+                <div class="collapse navbar-collapse" id="navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        {% for element in config.blueprint_navigation -%}
+                            {{ navigation.blueprint_element(element) }}
+                        {%- endfor %}
+                    </ul>
+                    <ul class="nav navbar-nav navbar-right">
+                        {% if current_user.is_authenticated() %}
+                            <li>
+                                <form class="navbar-form" method="get">
+                                    <div class="input-group">
+                                      <input type="text" class="typeahead form-control" id="nav_search" name="nav_search" autocomplete="on" placeholder="Suchen">
+                                      <span class="input-group-btn">
+                                        <button class="btn btn-default" type="button"><span class="glyphicon glyphicon-search"></span></button>
+                                      </span>
+                                    </div>
+                                </form>
+                            </li>
+                            <li>
+                                <p class="navbar-text navbar-right"><a class="navbar-link" href="{{ url_for("user.user_show", user_id = current_user.id) }}">{{ current_user.name }}</a> <a href="{{ url_for("login.logout") }}"><span style="color: white;" class="glyphicon glyphicon-off"></span></a></p>
+                            </li>
+                        {% else %}
+                            <li><a class="navbar-link" href="{{ url_for("login.login") }}">Anmelden <span style="color: white;" class="glyphicon glyphicon-off"></span></a></li>
+                        {% endif %}
+                    </ul>
+                </div><!--/.nav-collapse -->
+            </div>
+        </nav>
+    {%- endblock %}
+
+    <div class="container main">
+        {% block content_container -%}
+            {% block messages -%}
+                {% with messages = get_flashed_messages(with_categories=true) -%}
+                    {% if messages -%}
+                        <div class="row">
+                            <div class="flash-messages">
+                            {% for category, message in messages -%}
+                                {% set cat = category %}
+                                {% if cat == "message" %}{% set cat = "info" %}{% endif %}
+                                {% if cat == "error" %}{% set cat = "danger" %}{% endif %}
+                                <div class="alert fade in alert-{{ cat }}">
+                                    <a class="close" data-dismiss="alert" href="#">×</a>
+                                    <strong>{{ category|pretty_category }}:</strong> {{ message }}
+                                </div>
+                            {%- endfor %}
+                            </div>
+                        </div>
+                    {%- endif %}
+                {%- endwith %}
+            {%- endblock %}
+            {% block page_header -%}
+                <div class="page-header">
+                    <h1>{{ navigation.get_page_title(config, page_title) }}</h1>
+                </div>
+            {%- endblock %}
+            {% block content -%}
+            <div class="row">
+                {% block single_row_content %}{% endblock %}
+            </div>
+            {%- endblock %}
+        {%- endblock %}
+    </div> <!-- /container -->
+
+<script type="text/javascript" src="{{ url_for("static", filename="jquery/jquery.min.js") }}"></script>
+<script type="text/javascript" src="{{ url_for("static", filename="bootstrap/js/bootstrap.js") }}"></script>
+<script type="text/javascript" src="{{ url_for("static", filename="handlebars/handlebars.js") }}"></script>
+<script type="text/javascript" src="{{ url_for("static", filename="typeahead/typeahead.bundle.min.js") }}"></script>
+<script type="text/javascript" src="{{ url_for("static", filename="custom/js/form.js") }}"></script>
+{{ resources.linked_script_files() }}
+{% raw %}
+<script type="text/x-handlebars-template" id="nav_search_suggestion">
+    <a href="{% endraw %}{{ url_for('user.user_show', user_id=0)|replace('0', '') }}{% raw %}{{ id }}">{{ name }} ({{ id }})</a>
+</script>
+{% endraw %}
+<script type="text/javascript">
+    $(function() {
+        var isFixed = 0,
+            $window = $(window),
+            $subnav = $(".subnav");
+
+        function place_alerts() {
+            var $messages = $(".flash-messages");
+            if (!$messages.length)
+                return;
+            var offset = $messages.offset().top,
+                    top = $window.scrollTop();
+
+            if (isFixed) {
+                if (top < 2) {
+                    $messages.removeClass("flash-messages-fixed");
+                    $messages.css("margin-top", 0);
+                    isFixed = 0;
+                }
+                if ($subnav.length) {
+                    var padding = 28;
+                    if (top < 60) {
+                        padding = (top / 2) - 2;
+                    }
+                    $messages.css("margin-top", padding);
+                }
+            } else {
+                if (top >= 2) {
+                    var width = $messages.width();
+                    $messages.addClass("flash-messages-fixed");
+                    $messages.css("width", width);
+                    isFixed = 1;
+
+                    // reemit event as workaround to get proper subnav offset calc
+                    $window.trigger("scroll");
+                }
+            }
+        }
+
+        $(window).on("scroll", place_alerts);
+        var users = new Bloodhound({
+            name: 'users',
+            datumTokenizer: (function() {
+                var t = Bloodhound.tokenizers.whitespace;
+                return function(r) { return t(r['name']).push(r['id']); };
+            })(),
+            queryTokenizer: Bloodhound.tokenizers.whitespace,
+            remote: {
+                url: '{{ url_for('user.json_search') }}?query=%QUERY',
+                ttl: 60,
+                filter: function(response) { return response.users; }
+            }
+        });
+        users.initialize();
+        $('#nav_search').typeahead(
+            {
+                hint: true,
+                highlight: true,
+                minLength: 1
+            },
+            {
+                name: 'users',
+                displayKey: function(record) {
+                    return record['name'] + ' (' + record['id'] + ')';
+                },
+                source: users.ttAdapter(),
+                templates: {
+                    empty: 'Keine Ergebnisse',
+                    suggestion: Handlebars.compile($('#nav_search_suggestion').html())
+                }
+            }
+        );
+    });
+</script>
+{{ resources.ready_scripts() }}
+{% block page_script %}{% endblock %}
+</body>
+</html>

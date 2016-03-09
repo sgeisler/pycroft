@@ -1,0 +1,35 @@
+{#
+ Copyright (c) 2014 The Pycroft Authors. See the AUTHORS file.
+ This file is part of the Pycroft project and licensed under the terms of
+ the Apache License, Version 2.0. See the LICENSE file for details.
+#}
+{% extends "layout.html" %}
+
+{%  macro list_accounts(type, accounts) -%}
+    <div class="col-sm-6 col-md-5 col-lg-4">
+        <h3>{{ type }}</h3>
+        <ul class="list-unstyled">
+        {% for a in accounts %}
+            <li><a href="{{ url_for('.accounts_show', account_id=a.id) }}">{{ a.name }}</a></li>
+        {% endfor %}
+        </ul>
+    </div>
+{%- endmacro %}
+
+{% block content %}
+    <h2>Bestandskonten</h2>
+    <div class="row">
+        {{ list_accounts("Aktivkonten", accounts["ASSET"]) }}
+        {{ list_accounts("Passivkonten", accounts["LIABILITY"]) }}
+    </div>
+    <h2>Erfolgskonten</h2>
+    <div class="row">
+        {{ list_accounts("Aufwandskonten", accounts["EXPENSE"]) }}
+        {{ list_accounts("Ertragskonten", accounts["REVENUE"]) }}
+    </div>
+    {% if current_user is privileged_for('finance_change') -%}
+    <p>
+        <a class="btn btn-primary" href="{{ url_for('.accounts_create') }}">Neues Konto</a>
+    </p>
+    {%- endif %}
+{% endblock %}

@@ -1,0 +1,13 @@
+{#
+ Copyright (c) 2014 The Pycroft Authors. See the AUTHORS file.
+ This file is part of the Pycroft project and licensed under the terms of
+ the Apache License, Version 2.0. See the LICENSE file for details.
+#}
+{% extends "layout.html" %}
+
+{% import "macros/forms.html" as forms %}
+{% import "macros/resources.html" as resources %}
+{% block page_css %}{{ resources.link_css("datepicker/css/datepicker3.css") }}{% endblock %}
+{% block single_row_content %}
+    {{ forms.simple_form(form, '', url_for('.change_mac',user_net_device_id=user_net_device_id)  ) }}
+{% endblock %}
